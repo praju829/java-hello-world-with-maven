@@ -1,21 +1,23 @@
-pipeline{
-    agent any
-
-    tools {
-         maven 'maven'
-         jdk 'java'
+pipeline {
+  agent any 
+  stages {
+   stage('Test') {
+      steps {
+        echo 'Testing...'
+        snykSecurity(
+          snykInstallation: 'snyk',
+          snykTokenId: 'snyk cred'
+        )
+      }
     }
-
-    stages{
-        stage('checkout'){
-            steps{
-                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github access', url: 'https://github.com/sreenivas449/java-hello-world-with-maven.git']]])
-            }
+    stage ('SAST') {
+      steps {
+        withSonarQubeEnv('SonarQube') {
+          sh 'mvn package'
+          sh 'mvn sonar:sonar'
+          sh 'cat target/sonar/report-task.txt'
         }
-        stage('build'){
-            steps{
-               bat 'mvn package'
-            }
-        }
+      }
     }
+  }
 }
